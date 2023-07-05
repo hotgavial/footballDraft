@@ -1,12 +1,12 @@
 <script>
 import CompositionScreen from './components/CompositionScreen.vue'
 import UsersScoreSheets from './components/UsersScoresheets.vue'
-import ListOfPlayersForUser from './components/ListOfPlayersForUser.vue'
 import BestPlayers from './components/BestPlayers.vue'
 import RankingComposition from './components/RankingComposition.vue'
+import SuccessScreen from './components/SuccessScreen.vue'
 
 export default {
-    components: {CompositionScreen, UsersScoreSheets, ListOfPlayersForUser, BestPlayers, RankingComposition}, 
+    components: {CompositionScreen, UsersScoreSheets, BestPlayers, RankingComposition, SuccessScreen}, 
   data: function() {
         return {
             bestPlayers: [],
@@ -22,9 +22,13 @@ export default {
             isGameOver: false,
             lastAttempts: [],
             nbrRounds: 0,
+            newComposition: null,
+            oldComposition: null,
+            playerRemoved: null,
             rankingAllCompositions:  [],
             selectedCompo: 0,
             selectedUserIndexForCompoScreen: 0,
+            showSuccessModal: false,
             users: [
                 {
                     id: 1,
@@ -104,16 +108,10 @@ export default {
                 this.bestPlayers.pop();
             }       
         },
-        addPlayerToDatabase: function(idPlayer, idUser, callback) {
+        addPlayerToDatabase: function(idPlayer, idUser) {
             var xhr = new XMLHttpRequest();
             xhr.open("POST", "http://localhost/updatePlayerSession.php", true);
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-            xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-            console.log(xhr.responseText);
-            callback();
-                }
-            };
             xhr.send("idPlayer=" + idPlayer + "&idUser=" + idUser);
         },
         addNewPlayerToTeam : function(newPlayer, composition, uniqueUser) {
@@ -252,19 +250,13 @@ export default {
             }
 
             rankingAllCompositions.sort((a, b) => b.sumGrades - a.sumGrades);
-            console.log(rankingAllCompositions);
             let pointsToAdd = rankingAllCompositions.length;
             let iterationDecreasing = pointsToAdd;
             let previousIndex = -1;
             for(let compo of rankingAllCompositions) {
-                if(previousIndex != -1 && iterationDecreasing != 1 && rankingAllCompositions[previousIndex].sumGrades == compo.sumGrades) {
-                    pointsToAdd = pointsToAdd;
-                } else {
-                    pointsToAdd = iterationDecreasing;
-                }
+                pointsToAdd = (previousIndex !== -1 && iterationDecreasing !== 1 && rankingAllCompositions[previousIndex].sumGrades === compo.sumGrades) ? pointsToAdd : iterationDecreasing;
                 for(let user of this.users) {
                     if(user.pseudo == compo.user.pseudo) {
-                        console.log(user.score + "+" + pointsToAdd);
                         if(compo.bonus) {
                             user.score += pointsToAdd * 2;
                             compo.total = pointsToAdd * 2;
@@ -282,7 +274,6 @@ export default {
         },
         convertIntoArray: function() {
             this.currentPlayerClues = [];
-            console.log("Sarjo");
             this.currentPlayerClues.push("Nom " + this.currentPlayer.name.charAt(0));
             this.currentPlayerClues.push("Prénom " + this.currentPlayer.firstname?.charAt(0));
             this.currentPlayerClues.push(this.currentPlayer.positions);
@@ -312,12 +303,33 @@ export default {
                     grades: []
                 };
                 uniqueUser.listCompoUser.push(compo);
+                this.playerRemoved = null
+                this.oldComposition = compo
+                uniqueUser.playerToRemove = newPlayer;
+                this.addNewPlayerToTeam(uniqueUser.playerToRemove, compo, uniqueUser);
+                this.newComposition = JSON.parse(JSON.stringify(compo))
+                return;
             }
             uniqueUser.playerToRemove = newPlayer;
+            let playerHasBeenPlaced = false;
+            this.playerRemoved = null
             for(let compo of uniqueUser.listCompoUser) {
+                if(!playerHasBeenPlaced) {
+                    this.oldComposition = JSON.parse(JSON.stringify(compo))
+                }
                 this.addNewPlayerToTeam(uniqueUser.playerToRemove, compo, uniqueUser);
+                if(!playerHasBeenPlaced) {
+                    if(uniqueUser.playerToRemove === "" || uniqueUser.playerToRemove?.id !== newPlayer.id) {
+                        playerHasBeenPlaced = true
+                    this.newComposition = JSON.parse(JSON.stringify(compo))
+                    console.log(this.newComposition)
+                    }
+                }
                 if(uniqueUser.playerToRemove === "") {
                     return;
+                } 
+                if(playerHasBeenPlaced && !this.playerRemoved)  {
+                    this.playerRemoved = uniqueUser.playerToRemove;
                 }
             }
             let compo = {
@@ -333,12 +345,18 @@ export default {
                     },
                     grades: []
                 };
+            if(!playerHasBeenPlaced) {
+                this.playerRemoved = null
+                JSON.parse(JSON.stringify(compo))
+            }
             uniqueUser.listCompoUser.push(compo);
             this.addNewPlayerToTeam(uniqueUser.playerToRemove, compo, uniqueUser);
+            if(!playerHasBeenPlaced) {
+                this.newComposition = compo
+            }
             return;
         },
         getClue: function() {
-            console.log("oui");
             let indexClue = Math.floor(Math.random() * this.currentPlayerClues.length);
             let clue = this.currentPlayerClues[indexClue];
             this.clues.push(clue);
@@ -358,9 +376,9 @@ export default {
         giveUp: function() {
             this.guess = "";
             if(this.clues.length == 8) {
-                this.addPlayerToDatabase(this.currentPlayer.id, 6, () => {
-                        this.newRound();
-                    });
+                this.addPlayerToDatabase(this.currentPlayer.id, 6)
+                ////
+                this.newRound
             } else {
                 this.lastAttempts.push(this.guess);
                 this.currentIndexUsersArray = this.currentIndexUsersArray + 1 == this.users.length ? 0 : this.currentIndexUsersArray + 1; 
@@ -376,17 +394,16 @@ export default {
                 this.users[this.currentIndexUsersArray].nbrFbPlayers += 1;
                 this.currentPlayer.owner = this.users[this.currentIndexUsersArray].pseudo;
                 this.distributionNewPlayer(this.currentPlayer, this.users[this.currentIndexUsersArray]);
+                this.showSuccessModal = true
                 this.addPlayerToBestPlayers();
                 this.calculateRanking();
-                this.addPlayerToDatabase(this.currentPlayer.id, this.currentUser.id, () => {
-                    this.newRound();
-                });
+                // this.addPlayerToDatabase(this.currentPlayer.id, 6)
             } else {
                 this.lastAttempts.push(this.guess);
                 if(this.clues.length == 8) {
-                    this.addPlayerToDatabase(this.currentPlayer.id, 6, () => {
-                        this.newRound();
-                    });
+                    this.addPlayerToDatabase(this.currentPlayer.id, 6)
+                    ////
+                    this.newRound()
                 } else {
                     this.guess = "";
                     this.currentIndexUsersArray = this.currentIndexUsersArray + 1 == this.users.length ? 0 : this.currentIndexUsersArray + 1;
@@ -396,6 +413,7 @@ export default {
             }
         },
         newRound: function() {
+            this.showSuccessModal = false
             this.nbrRounds++;
             this.indexStartingUser = this.indexStartingUser+1 == this.users.length ? 0 : this.indexStartingUser + 1;
             this.currentIndexUsersArray = this.indexStartingUser;
@@ -403,7 +421,6 @@ export default {
             this.lastAttempts = [];
             this.clues = [];
             this.guess = "";
-            console.log("on est ici");
             this.getPlayer()
             .then(() => this.convertIntoArray())
             .then(() => this.getClue())
@@ -511,24 +528,23 @@ export default {
             })
                 .then((response) => response.json())
                 .then((data) => {
-                    console.log(data);
                     data.forEach(element => {
-                        console.log(element);
                         element.grade = parseInt(element.grade);
                         element.owner = parseInt(element.owner);
                         this.distributionNewPlayer(element, this.users[element.owner - 1]);
                         this.currentPlayer = element;
-                        console.log(this.users[element.owner - 1]);
                         this.users[element.owner - 1].fbPlayers.push(element);
                         this.users[element.owner - 1].nbrFbPlayers += 1;
                         this.currentPlayer.owner = this.users[element.owner - 1].pseudo;
-                        console.log(this.users[element.owner - 1]);
                         this.addPlayerToBestPlayers();
                     });
                     this.calculateRanking();
                 })
                 .catch((error) => console.error(error));
-        }
+        },
+        test: function() {
+            this.showSuccessModal = true
+        },
     }, 
     computed: {
         compositionToDisplay: function() {
@@ -537,6 +553,9 @@ export default {
         selectedUserForListOfPlayers: function() {
             return this.users[this.selectedUserIndexForCompoScreen];
         }
+    },
+    mounted() {
+        this.loadGame()
     }
 }
 
@@ -545,6 +564,7 @@ export default {
 <template>
       <div class="whole">
         <div class="host-game">
+            <SuccessScreen v-if="showSuccessModal" @success-animation-over="newRound" :oldCompo="oldComposition" :newCompo="newComposition" :newPlayer="currentPlayer" :oldPlayer="playerRemoved"/>
             <div class="host-game_orderedTeams">
                 <RankingComposition :rankingAllCompositions="rankingAllCompositions" />
                 <BestPlayers :bestPlayers="bestPlayers" />
@@ -586,7 +606,7 @@ export default {
                     <option v-for="(numCompo, index) in selectedUserForListOfPlayers.listCompoUser" :value="index" :key="index">{{ index }}</option>
                 </select>
                 <button v-if="!hasGameStarted" @click="startGame">Ajouter joueur</button>
-                <button @click="loadGame">LOAD</button>
+                <button @click="test">TEST</button>
             </div>
             <UsersScoreSheets :users="users" :currentUser="currentUser"/>
         </div>
