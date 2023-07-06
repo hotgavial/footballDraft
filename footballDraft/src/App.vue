@@ -322,7 +322,6 @@ export default {
                     if(uniqueUser.playerToRemove === "" || uniqueUser.playerToRemove?.id !== newPlayer.id) {
                         playerHasBeenPlaced = true
                     this.newComposition = JSON.parse(JSON.stringify(compo))
-                    console.log(this.newComposition)
                     }
                 }
                 if(uniqueUser.playerToRemove === "") {
@@ -377,8 +376,7 @@ export default {
             this.guess = "";
             if(this.clues.length == 8) {
                 this.addPlayerToDatabase(this.currentPlayer.id, 6)
-                ////
-                this.newRound
+                this.showSuccessModal = true
             } else {
                 this.lastAttempts.push(this.guess);
                 this.currentIndexUsersArray = this.currentIndexUsersArray + 1 == this.users.length ? 0 : this.currentIndexUsersArray + 1; 
@@ -397,13 +395,12 @@ export default {
                 this.showSuccessModal = true
                 this.addPlayerToBestPlayers();
                 this.calculateRanking();
-                // this.addPlayerToDatabase(this.currentPlayer.id, 6)
+                this.addPlayerToDatabase(this.currentPlayer.id, 6)
             } else {
                 this.lastAttempts.push(this.guess);
                 if(this.clues.length == 8) {
+                    this.showSuccessModal = true
                     this.addPlayerToDatabase(this.currentPlayer.id, 6)
-                    ////
-                    this.newRound()
                 } else {
                     this.guess = "";
                     this.currentIndexUsersArray = this.currentIndexUsersArray + 1 == this.users.length ? 0 : this.currentIndexUsersArray + 1;
@@ -414,6 +411,9 @@ export default {
         },
         newRound: function() {
             this.showSuccessModal = false
+            this.olderPlayer = null
+            this.newComposition = null
+            this.oldComposition = null
             this.nbrRounds++;
             this.indexStartingUser = this.indexStartingUser+1 == this.users.length ? 0 : this.indexStartingUser + 1;
             this.currentIndexUsersArray = this.indexStartingUser;

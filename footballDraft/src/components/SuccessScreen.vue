@@ -6,20 +6,31 @@ export default {
   data() {
     return {
       compo: null,
-      player: null
+      player: null,
+      showCompo: false,
+      message: ''
     };
   },
   mounted() {    
     this.compo = this.oldCompo;
     this.player = this.oldPlayer
-    console.log(this.player)
-    setTimeout(() => {
+    if(this.newCompo === null) {
+      this.message = 'ET NON ! LE JOUEUR A TROUVER ETAIT : '
+      setTimeout(() => {
+          this.$emit('success-animation-over')
+        }, 13000);
+    } else {
+      this.showCompo = true
+      this.message = 'BRAVO !'
+      setTimeout(() => {
         this.compo = this.newCompo
         this.player = this.newPlayer
-      }, 2000); 
-    setTimeout(() => {
-        this.$emit('success-animation-over')
-      }, 5000);
+      }, 3000); 
+      setTimeout(() => {
+          this.$emit('success-animation-over')
+        }, 6000);
+    }
+    
   },
   props: ["oldPlayer", "newPlayer", "oldCompo", "newCompo"]
 }
@@ -27,11 +38,12 @@ export default {
 <template>
     <div class="success">
         <div class="success__window">
+            <h4>{{ message }}</h4>
             <div class="success__infos">
                 <div>{{newPlayer?.name}}</div>
                 <div>{{newPlayer?.grade}}</div>
             </div>
-            <CompositionScreen :compositionToDisplay="compo" :player="player"/>
+            <CompositionScreen v-if="showCompo" :compositionToDisplay="compo" :player="player"/>
         </div>
     </div>
 </template>
@@ -63,6 +75,12 @@ export default {
     .success__infos {
         font-size: 20px;
         font-weight: bold;
+    }
+
+    .h4 {
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 20px;
     }
 
 </style>
