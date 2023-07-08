@@ -9,7 +9,10 @@ export default {
     components: {CompositionScreen, UsersScoreSheets, BestPlayers, RankingComposition, SuccessScreen}, 
   data: function() {
         return {
+            bestCompo: null,
             bestPlayers: [],
+            bestPossibleScore: 0,
+            bestScore: 0,
             clue: "",
             clues: [],
             currentIndexUsersArray: 0,
@@ -25,6 +28,8 @@ export default {
             newComposition: null,
             oldComposition: null,
             playerRemoved: null,
+            playersTested: [],
+            playerToRemove: null,
             rankingAllCompositions:  [],
             selectedCompo: 0,
             selectedUserIndexForCompoScreen: 0,
@@ -38,11 +43,6 @@ export default {
                     nbrFbPlayers: 0,
                     fbPlayers: [],
                     listCompoUser: [],
-                    bestCompo: null,
-                    bestScore: 0,
-                    playersTested: [],
-                    bestPossibleScore: 0,
-                    playerToRemove: "",
                     listCompoScore: []
                 },
                 {
@@ -53,11 +53,6 @@ export default {
                     nbrFbPlayers: 0,
                     fbPlayers: [],
                     listCompoUser: [],
-                    bestCompo: null,
-                    bestScore: 0,
-                    playersTested: [],
-                    bestPossibleScore: 0,
-                    playerToRemove: "",
                     listCompoScore: []
                 },
                 {
@@ -68,11 +63,6 @@ export default {
                     nbrFbPlayers: 0,
                     fbPlayers: [],
                     listCompoUser: [],
-                    bestCompo: null,
-                    bestScore: 0,
-                    playersTested: [],
-                    bestPossibleScore: 0,
-                    playerToRemove: "",
                     listCompoScore: []
                 },
                 {
@@ -83,11 +73,6 @@ export default {
                     nbrFbPlayers: 0,
                     fbPlayers: [],
                     listCompoUser: [],
-                    bestCompo: null,
-                    bestScore: 0,
-                    playersTested: [],
-                    bestPossibleScore: 0,
-                    playerToRemove: "",
                     listCompoScore: []
                 }
             ],
@@ -114,7 +99,7 @@ export default {
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             xhr.send("idPlayer=" + idPlayer + "&idUser=" + idUser);
         },
-        addNewPlayerToTeam : function(newPlayer, composition, uniqueUser) {
+        addNewPlayerToTeam : function(newPlayer, composition) {
             if(composition.grades.length === 11) {
                 // If in a complete team the worst graded player has a better grade than the new player, the team can't possibly improve by replacing any old player by the new player
                 if(composition.grades[0] >= newPlayer.grade) {
@@ -125,7 +110,7 @@ export default {
                     if(position === "Milieu de Terrain" || position === "Défenseur Central" || position === "Buteur") {
                         for(let i=0; i < 2; i++) {
                             if(newPlayer.grade > composition.grades[0] && composition.positions[position][i].grade === composition.grades[0]) {
-                                uniqueUser.playerToRemove = composition.positions[position][i];
+                                this.playerToRemove = composition.positions[position][i];
                                 composition.grades.splice(0, 1);
                                 composition.grades.push(newPlayer.grade);
                                 composition.grades.sort((a,b)=>a-b); // So that we know composition.grades[0] will always be the worst grade of the players in the team
@@ -137,7 +122,7 @@ export default {
                     } else {
                         if(composition.positions[position][0].grade === composition.grades[0]) {
                             composition.grades.splice(0, 1);
-                            uniqueUser.playerToRemove = composition.positions[position][0];
+                            this.playerToRemove = composition.positions[position][0];
                             composition.grades.push(newPlayer.grade);
                             composition.grades.sort((a,b)=>a-b);
                             composition.positions[position].splice(0, 1);
@@ -146,14 +131,14 @@ export default {
                         }
                     }
                 }
-                uniqueUser.bestPossibleScore = composition.grades.reduce((partialSum, a) => partialSum + a, 0) - composition.grades[0] + newPlayer.grade; // We may use this value later inside our recursiveTesting function
+                this.bestPossibleScore = composition.grades.reduce((partialSum, a) => partialSum + a, 0) - composition.grades[0] + newPlayer.grade; // We may use this value later inside our recursiveTesting function
             } else {
                 // If new player has a position that hasn't been fullfilled yet, he can take it. That'll be the better improvement for the team.
                 for(let position of newPlayer.positions) {
                     if(position === "Milieu de Terrain" || position === "Défenseur Central" || position === "Buteur") {
                         for(let i=0; i < 2; i++) {
                             if(composition.positions[position][i] === undefined) {
-                                uniqueUser.playerToRemove = "";
+                                this.playerToRemove = null;
                                 composition.positions[position].push(newPlayer);
                                 composition.grades.push(newPlayer.grade); 
                                 composition.grades.sort((a,b)=>a-b);
@@ -162,7 +147,7 @@ export default {
                         }
                     } else {
                         if(composition.positions[position].length === 0) {
-                            uniqueUser.playerToRemove = "";
+                            this.playerToRemove = null;
                             composition.positions[position].push(newPlayer);
                             composition.grades.push(newPlayer.grade); 
                             composition.grades.sort((a,b)=>a-b);
@@ -170,7 +155,7 @@ export default {
                         }
                     }
                 }
-                uniqueUser.bestPossibleScore = composition.grades.reduce((partialSum, a) => partialSum + a, 0) + newPlayer.grade;
+                this.bestPossibleScore = composition.grades.reduce((partialSum, a) => partialSum + a, 0) + newPlayer.grade;
             }
             // If the new player has only one position he can fullfill and the players who play in this position in the team can only play this position too, we can simply compare their grades to know which one(s) are the best
             if(newPlayer.positions.length === 1) {
@@ -179,14 +164,14 @@ export default {
                         if(composition.positions[newPlayer.positions[0]][0].grade >= composition.positions[newPlayer.positions[0]][1].grade
                             && newPlayer.grade > composition.positions[newPlayer.positions[0]][1].grade) {
                                 composition.grades.splice(composition.grades.indexOf(composition.positions[newPlayer.positions[0]][1].grade), 1);
-                                uniqueUser.playerToRemove = composition.positions[newPlayer.positions[0]][1];
+                                this.playerToRemove = composition.positions[newPlayer.positions[0]][1];
                                 composition.grades.push(newPlayer.grade);
                                 composition.grades.sort((a,b)=>a-b);
                                 composition.positions[newPlayer.positions[0]][1] = newPlayer;
                         } else if(composition.positions[newPlayer.positions[0]][1].grade > composition.positions[newPlayer.positions[0]][0].grade
                             && newPlayer.grade > composition.positions[newPlayer.positions[0]][0].grade) {
                                 composition.grades.splice(composition.grades.indexOf(composition.positions[newPlayer.positions[0]][0].grade), 1);
-                                uniqueUser.playerToRemove = composition.positions[newPlayer.positions[0]][0];
+                                this.playerToRemove = composition.positions[newPlayer.positions[0]][0];
                                 composition.grades.push(newPlayer.grade);
                                 composition.grades.sort((a,b)=>a-b);
                                 composition.positions[newPlayer.positions[0]][0] = newPlayer;
@@ -197,7 +182,7 @@ export default {
                     if(composition.positions[newPlayer.positions[0]][0].positions.length === 1) {
                         if(newPlayer.grade > composition.positions[newPlayer.positions[0]][0].grade) {
                             composition.grades.splice(composition.grades.indexOf(composition.positions[newPlayer.positions[0]][0].grade), 1);
-                            uniqueUser.playerToRemove = composition.positions[newPlayer.positions[0]][0];
+                            this.playerToRemove = composition.positions[newPlayer.positions[0]][0];
                             composition.grades.push(newPlayer.grade);
                             composition.grades.sort((a,b)=>a-b);
                             composition.positions[newPlayer.positions[0]][0] = newPlayer;
@@ -207,12 +192,12 @@ export default {
                 }
             }
 
-            uniqueUser.bestCompo = JSON.parse(JSON.stringify(composition));
-            uniqueUser.bestScore = composition.grades.reduce((partialSum, a) => partialSum + a, 0);
-            uniqueUser.playersTested = [];
-            this.recursiveTesting(newPlayer, composition, uniqueUser);
-            composition.positions = uniqueUser.bestCompo.positions;
-            composition.grades = uniqueUser.bestCompo.grades;
+            this.bestCompo = JSON.parse(JSON.stringify(composition));
+            this.bestScore = composition.grades.reduce((partialSum, a) => partialSum + a, 0);
+            this.playersTested = [];
+            this.recursiveTesting(newPlayer, composition);
+            composition.positions = this.bestCompo.positions;
+            composition.grades = this.bestCompo.grades;
             composition.grades.sort((a,b)=>a-b);
             return;
         },
@@ -305,30 +290,30 @@ export default {
                 uniqueUser.listCompoUser.push(compo);
                 this.playerRemoved = null
                 this.oldComposition = compo
-                uniqueUser.playerToRemove = newPlayer;
-                this.addNewPlayerToTeam(uniqueUser.playerToRemove, compo, uniqueUser);
+                this.playerToRemove = newPlayer;
+                this.addNewPlayerToTeam(this.playerToRemove, compo);
                 this.newComposition = JSON.parse(JSON.stringify(compo))
                 return;
             }
-            uniqueUser.playerToRemove = newPlayer;
+            this.playerToRemove = newPlayer;
             let playerHasBeenPlaced = false;
             this.playerRemoved = null
             for(let compo of uniqueUser.listCompoUser) {
                 if(!playerHasBeenPlaced) {
                     this.oldComposition = JSON.parse(JSON.stringify(compo))
                 }
-                this.addNewPlayerToTeam(uniqueUser.playerToRemove, compo, uniqueUser);
+                this.addNewPlayerToTeam(this.playerToRemove, compo);
                 if(!playerHasBeenPlaced) {
-                    if(uniqueUser.playerToRemove === "" || uniqueUser.playerToRemove?.id !== newPlayer.id) {
+                    if(!this.playerToRemove || this.playerToRemove?.id !== newPlayer.id) {
                         playerHasBeenPlaced = true
                     this.newComposition = JSON.parse(JSON.stringify(compo))
                     }
                 }
-                if(uniqueUser.playerToRemove === "") {
+                if(!this.playerToRemove) {
                     return;
                 } 
                 if(playerHasBeenPlaced && !this.playerRemoved)  {
-                    this.playerRemoved = uniqueUser.playerToRemove;
+                    this.playerRemoved = this.playerToRemove;
                 }
             }
             let compo = {
@@ -349,7 +334,7 @@ export default {
                 JSON.parse(JSON.stringify(compo))
             }
             uniqueUser.listCompoUser.push(compo);
-            this.addNewPlayerToTeam(uniqueUser.playerToRemove, compo, uniqueUser);
+            this.addNewPlayerToTeam(this.playerToRemove, compo);
             if(!playerHasBeenPlaced) {
                 this.newComposition = compo
             }
@@ -426,8 +411,8 @@ export default {
             .then(() => this.getClue())
             .catch((error) => console.error(error));
         },
-        recursiveTesting: function (player, composition, uniqueUser) {
-            uniqueUser.playersTested.push(player.name);
+        recursiveTesting: function (player, composition) {
+            this.playersTested.push(player.name);
             let testedComposition = JSON.parse(JSON.stringify(composition));
             let newScore = 0;
             let playerRemoved;
@@ -440,16 +425,16 @@ export default {
                         newScore = 0;
                         // If the player can be placed without replacing any player, it is the best composition and we can stop
                         if(testedComposition.positions[position][i] === undefined) {
-                            uniqueUser.playerToRemove = "";
+                            this.playerToRemove = null;
                             testedComposition.positions[position].push(player);
                             testedComposition.grades.push(player.grade);
                             testedComposition.grades.sort((a,b)=>a-b);
-                            uniqueUser.bestCompo = testedComposition; 
+                            this.bestCompo = testedComposition; 
                             return true;
                         }
                         // If the player we want to replace has already been moved, we stop, otherwise we check if we've reached the best possible score. If that's not the case we call the recursiveTesting function 
                         // with the new composition and the the player we've removed as parameters.
-                        if(uniqueUser.playersTested.indexOf(testedComposition.positions[position][i].name) === -1) {
+                        if(this.playersTested.indexOf(testedComposition.positions[position][i].name) === -1) {
                             playerRemoved = composition.positions[position][i];
                             testedComposition.positions[position].splice(i, 1);
                             testedComposition.positions[position].push(player);
@@ -457,17 +442,17 @@ export default {
                             testedComposition.grades.push(player.grade);
                             testedComposition.grades.sort((a,b)=>a-b);
                             newScore = testedComposition.grades.reduce((partialSum, a) => partialSum + a, 0);
-                            if(newScore === uniqueUser.bestPossibleScore) {
-                                uniqueUser.playerToRemove = playerRemoved;
-                                uniqueUser.bestCompo = testedComposition; 
+                            if(newScore === this.bestPossibleScore) {
+                                this.playerToRemove = playerRemoved;
+                                this.bestCompo = testedComposition; 
                                 return true;
                             }
-                            if(uniqueUser.bestScore < newScore) {
-                                uniqueUser.playerToRemove = playerRemoved;
-                                uniqueUser.bestScore = newScore;
-                                uniqueUser.bestCompo = testedComposition;
+                            if(this.bestScore < newScore) {
+                                this.playerToRemove = playerRemoved;
+                                this.bestScore = newScore;
+                                this.bestCompo = testedComposition;
                             }                         
-                            let recursive = this.recursiveTesting(playerRemoved, testedComposition, uniqueUser);
+                            let recursive = this.recursiveTesting(playerRemoved, testedComposition);
                             if(recursive === true) {
                                 return true;
                             }
@@ -475,14 +460,14 @@ export default {
                     }
                 } else {
                     if(testedComposition.positions[position][0] === undefined) {
-                        uniqueUser.playerToRemove = "";
+                        this.playerToRemove = null;
                         testedComposition.positions[position].push(player);
                         testedComposition.grades.push(player.grade);
                         testedComposition.grades.sort((a,b)=>a-b);
-                        uniqueUser.bestCompo = testedComposition; 
+                        this.bestCompo = testedComposition; 
                         return true;
                     }
-                    if(uniqueUser.playersTested.indexOf(testedComposition.positions[position][0].name) === -1) {
+                    if(this.playersTested.indexOf(testedComposition.positions[position][0].name) === -1) {
                         playerRemoved = composition.positions[position][0];
                         testedComposition.positions[position].splice(0, 1);
                         testedComposition.positions[position].push(player);
@@ -490,19 +475,19 @@ export default {
                         testedComposition.grades.push(player.grade);
                         testedComposition.grades.sort((a,b)=>a-b);
                         newScore = testedComposition.grades.reduce((partialSum, a) => partialSum + a, 0);
-                        if(newScore === uniqueUser.bestPossibleScore) {
-                            uniqueUser.playerToRemove = playerRemoved;
-                            uniqueUser.bestCompo = testedComposition; 
+                        if(newScore === this.bestPossibleScore) {
+                            this.playerToRemove = playerRemoved;
+                            this.bestCompo = testedComposition; 
                             return true;
                         }
-                        if(uniqueUser.bestScore < newScore) {
-                            uniqueUser.playerToRemove = playerRemoved;
-                            uniqueUser.bestScore = newScore;
-                            uniqueUser.bestCompo = testedComposition;
+                        if(this.bestScore < newScore) {
+                            this.playerToRemove = playerRemoved;
+                            this.bestScore = newScore;
+                            this.bestCompo = testedComposition;
                         }
                         // If the player we've removed has only one position available, he can't possibly be moved elsewhere. Therefore there is no need to call recursiveTesting.
                         if(composition.positions[position][0].positions.length !== 1) {
-                            let machin = this.recursiveTesting(playerRemoved, testedComposition, uniqueUser);
+                            let machin = this.recursiveTesting(playerRemoved, testedComposition);
                             if(machin === true) {
                                 return true;
                             }
@@ -510,7 +495,7 @@ export default {
                     }
                 }
             }
-            uniqueUser.playersTested.splice(uniqueUser.playersTested.indexOf(player), 1);
+            this.playersTested.splice(this.playersTested.indexOf(player), 1);
             return;
         },  
         startGame: function() {
