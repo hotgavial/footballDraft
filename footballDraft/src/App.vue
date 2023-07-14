@@ -34,48 +34,7 @@ export default {
             selectedCompo: 0,
             selectedUserIndexForCompoScreen: 0,
             showSuccessModal: false,
-            users: [
-                {
-                    id: 1,
-                    pseudo: "Matthieu",
-                    score: 0,
-                    ranking: 1,
-                    nbrFbPlayers: 0,
-                    fbPlayers: [],
-                    listCompoUser: [],
-                    listCompoScore: []
-                },
-                {
-                    id: 2,
-                    pseudo: "Samuel",
-                    score: 0,
-                    ranking: 1,
-                    nbrFbPlayers: 0,
-                    fbPlayers: [],
-                    listCompoUser: [],
-                    listCompoScore: []
-                },
-                {
-                    id: 3,
-                    pseudo: "Vincent P",
-                    score: 0,
-                    ranking: 1,
-                    nbrFbPlayers: 0,
-                    fbPlayers: [],
-                    listCompoUser: [],
-                    listCompoScore: []
-                },
-                {
-                    id: 4,
-                    pseudo: "Vincent W",
-                    score: 0,
-                    ranking: 1,
-                    nbrFbPlayers: 0,
-                    fbPlayers: [],
-                    listCompoUser: [],
-                    listCompoScore: []
-                }
-            ],
+            users: []
         }
         
     },
@@ -340,7 +299,7 @@ export default {
             }
             return;
         },
-        getClue: function() {
+        getClue() {
             let indexClue = Math.floor(Math.random() * this.currentPlayerClues.length);
             let clue = this.currentPlayerClues[indexClue];
             this.clues.push(clue);
@@ -357,7 +316,7 @@ export default {
                 })
                 .catch((error) => console.error(error));
         },
-        giveUp: function() {
+        giveUp() {
             this.guess = "";
             if(this.clues.length == 8) {
                 this.addPlayerToDatabase(this.currentPlayer.id, 6)
@@ -369,11 +328,10 @@ export default {
                 this.getClue();
             }
         },
-        guessingAttempt: function() {
+        guessingAttempt() {
             let normalizedGuess = this.guess.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/(.)\1+/g, "$1");
             let normalizedNamePlayerToGuess = this.currentPlayer.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/(.)\1+/g, "$1");
             if(normalizedGuess ==  normalizedNamePlayerToGuess){
-                this.users[this.currentIndexUsersArray].fbPlayers.push(this.currentPlayer);
                 this.users[this.currentIndexUsersArray].nbrFbPlayers += 1;
                 this.currentPlayer.owner = this.users[this.currentIndexUsersArray].pseudo;
                 this.distributionNewPlayer(this.currentPlayer, this.users[this.currentIndexUsersArray]);
@@ -394,7 +352,7 @@ export default {
                 }
             }
         },
-        newRound: function() {
+        newRound() {
             this.showSuccessModal = false
             this.olderPlayer = null
             this.newComposition = null
@@ -411,7 +369,7 @@ export default {
             .then(() => this.getClue())
             .catch((error) => console.error(error));
         },
-        recursiveTesting: function (player, composition) {
+        recursiveTesting(player, composition) {
             this.playersTested.push(player.name);
             let testedComposition = JSON.parse(JSON.stringify(composition));
             let newScore = 0;
@@ -498,7 +456,7 @@ export default {
             this.playersTested.splice(this.playersTested.indexOf(player), 1);
             return;
         },  
-        startGame: function() {
+        startGame() {
             this.nbrRounds = 1;
             this.hasGameStarted = true;
             this.currentUser = this.users[0];
@@ -507,33 +465,58 @@ export default {
             .then(() => this.getClue())
             .catch((error) => console.error(error));
         },
-        loadGame: function() {
-            return fetch(`http://localhost/loadFbSession.php`, {
-                method: "GET",
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    data.forEach(element => {
-                        element.grade = parseInt(element.grade);
-                        element.owner = parseInt(element.owner);
-                        this.distributionNewPlayer(element, this.users[element.owner - 1]);
-                        this.currentPlayer = element;
-                        this.users[element.owner - 1].fbPlayers.push(element);
-                        this.users[element.owner - 1].nbrFbPlayers += 1;
-                        this.currentPlayer.owner = this.users[element.owner - 1].pseudo;
-                        this.addPlayerToBestPlayers();
-                    });
-                    this.calculateRanking();
-                })
-                .catch((error) => console.error(error));
+        async loadGame(){
+            try {
+                await this.getUsers()
+                await this.loadCompositions()
+                this.calculateRanking()
+            }
+            catch (error) {
+                console.log(error)
+            }
         },
-        test: function() {
-            this.showSuccessModal = true
+        async loadCompositions() {
+            try {
+                const response = await fetch(`http://localhost/loadFbSession.php`, {
+                    method: "GET",
+                });
+                const data = await response.json();
+
+                data.forEach((element) => {
+                    element.grade = parseInt(element.grade);
+                    element.owner = parseInt(element.owner);
+                    this.distributionNewPlayer(element, this.users[element.owner - 1]);
+                    this.currentPlayer = element;
+                    this.users[element.owner - 1].nbrFbPlayers += 1;
+                    this.currentPlayer.owner = this.users[element.owner - 1].pseudo;
+                    this.addPlayerToBestPlayers();
+                });
+            }
+            catch (error) {
+                console.log(error)
+            }
+
         },
+        async getUsers() {
+            try {
+                const response = await fetch(`http://localhost/getUsers.php`, {
+                    method: "GET",
+                });
+                const data = await response.json();
+
+                this.users = data
+
+            } catch (error) {
+                console.error(error);
+            }
+        }
     }, 
     computed: {
         compositionToDisplay: function() {
-            return this.users[this.selectedUserIndexForCompoScreen].listCompoUser[this.selectedCompo];
+            if(this.users.length !== 0) {
+                return this.users[this.selectedUserIndexForCompoScreen].listCompoUser[this.selectedCompo];
+            }
+            return null
         },
         selectedUserForListOfPlayers: function() {
             return this.users[this.selectedUserIndexForCompoScreen];
@@ -547,7 +530,7 @@ export default {
 </script>
 
 <template>
-      <div class="whole">
+      <div v-if="users.length !== 0" class="whole">
         <div class="host-game">
             <SuccessScreen v-if="showSuccessModal" @success-animation-over="newRound" :oldCompo="oldComposition" :newCompo="newComposition" :newPlayer="currentPlayer" :oldPlayer="playerRemoved"/>
             <div class="host-game_orderedTeams">
@@ -583,7 +566,7 @@ export default {
                         </ul>
                     </div>
                 </div>
-                <CompositionScreen :compositionToDisplay="compositionToDisplay" />
+                <CompositionScreen v-if="compositionToDisplay" :compositionToDisplay="compositionToDisplay" />
                 <select class="listUserForCompoScreenChange" name="" id="" v-model="selectedUserIndexForCompoScreen">
                     <option v-for="(user, index) in users" :value="index" :key="index">{{ user.pseudo }}</option>
                 </select>
