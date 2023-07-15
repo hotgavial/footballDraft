@@ -306,7 +306,8 @@ export default {
             this.currentPlayerClues.splice(indexClue, 1);
         },
         getPlayer() {
-            return fetch(`http://localhost/getNewPlayer.php?idGameSession=1`, {
+            const idGameSession = this.$route.query.idGameSession ?? 1;
+            return fetch(`http://localhost/getNewPlayer.php?idGameSession=${idGameSession}`, {
                 method: "GET",
             })
                 .then((response) => response.json())
@@ -499,7 +500,7 @@ export default {
         },
         async getUsers() {
             try {
-                const response = await fetch(`http://localhost/getUsers.php`, {
+                const response = await fetch(`http://localhost/getUsers.php?idGameSession=1`, {
                     method: "GET",
                 });
                 const data = await response.json();
@@ -574,7 +575,6 @@ export default {
                     <option v-for="(numCompo, index) in selectedUserForListOfPlayers.listCompoUser" :value="index" :key="index">{{ index }}</option>
                 </select>
                 <button v-if="!hasGameStarted" @click="startGame">Ajouter joueur</button>
-                <button @click="test">TEST</button>
             </div>
             <UsersScoreSheets :users="users" :currentUser="currentUser"/>
         </div>
