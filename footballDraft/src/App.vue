@@ -53,10 +53,17 @@ export default {
             }       
         },
         addPlayerToDatabase: function(idPlayer, idUser) {
+            console.log('on rentre bien ici')
             var xhr = new XMLHttpRequest();
-            xhr.open("POST", "http://localhost/updatePlayerSession.php", true);
-            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-            xhr.send("idPlayer=" + idPlayer + "&idUser=" + idUser);
+            xhr.open("POST", "http://localhost:3000/api/updateFootballPlayerSession", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            var data = {
+                idPlayer: idPlayer,
+                idUser: idUser
+            };
+            console.log(data)
+            xhr.send(JSON.stringify(data));
+  
         },
         addNewPlayerToTeam : function(newPlayer, composition) {
             if(composition.grades.length === 11) {
@@ -219,15 +226,18 @@ export default {
         convertIntoArray: function() {
             this.currentPlayerClues = [];
             this.currentPlayerClues.push("Nom " + this.currentPlayer.name.charAt(0));
-            this.currentPlayerClues.push("Prénom " + this.currentPlayer.firstname?.charAt(0));
-            this.currentPlayerClues.push(this.currentPlayer.positions);
+            this.currentPlayerClues.push("Prénom " + this.currentPlayer.firstName?.charAt(0));
+            const positionsText = this.currentPlayer.positions.map((item) => item.position).join(", ");
+            this.currentPlayer.positions = this.currentPlayer.positions.map((item) => item.position)
+            this.currentPlayerClues.push("Positions : " + positionsText)
             this.currentPlayerClues.push(this.currentPlayer.size + " cm");
-            this.currentPlayerClues.push("Année de Naissance : " + this.currentPlayer.birthdate);
-            this.currentPlayerClues.push("Buts en Sélection : " + this.currentPlayer.selectionsGoals);
-            this.currentPlayerClues.push("Match en Sélection : " + this.currentPlayer.selectionsGames);
-            this.currentPlayerClues.push(this.currentPlayer.country);
-            this.currentPlayer.career.forEach((club) => {
-                this.currentPlayerClues.push(club);
+            this.currentPlayerClues.push("Année de Naissance : " + this.currentPlayer.birthDate);
+            this.currentPlayerClues.push("Buts en Sélection : " + this.currentPlayer.goalsScoredForCountry);
+            this.currentPlayerClues.push("Match en Sélection : " + this.currentPlayer.gamesPlayedForCountry);
+            this.currentPlayerClues.push(this.currentPlayer.nationality);
+            this.currentPlayer.years.forEach((year) => {
+                const lastYear = year.lastYear ? year.lastYear : '????'
+                this.currentPlayerClues.push(`${year.firstYear}/${lastYear} : ${year.club.club} (${year.club.country})`);
             });
         },
         distributionNewPlayer: function(newPlayer, uniqueUser) {
@@ -262,8 +272,9 @@ export default {
                     this.oldComposition = JSON.parse(JSON.stringify(compo))
                 }
                 this.addNewPlayerToTeam(this.playerToRemove, compo);
+                console.log(this.playerToRemove)
                 if(!playerHasBeenPlaced) {
-                    if(!this.playerToRemove || this.playerToRemove?.id !== newPlayer.id) {
+                    if(!this.playerToRemove || this.playerToRemove?.idPlayer !== newPlayer.idPlayer) {
                         playerHasBeenPlaced = true
                     this.newComposition = JSON.parse(JSON.stringify(compo))
                     }
@@ -306,8 +317,8 @@ export default {
             this.currentPlayerClues.splice(indexClue, 1);
         },
         getPlayer() {
-            const idGameSession = this.$route.query.idGameSession ?? 1;
-            return fetch(`http://localhost/getNewPlayer.php?idGameSession=${idGameSession}`, {
+            // const idGameSession = this.$route.query.idGameSession ?? 1;
+            return fetch(`http://localhost:3000/api/getNewFootballPlayer/1`, {
                 method: "GET",
             })
                 .then((response) => response.json())
@@ -320,7 +331,7 @@ export default {
         giveUp() {
             this.guess = "";
             if(this.clues.length == 8) {
-                this.addPlayerToDatabase(this.currentPlayer.id, 6)
+                this.addPlayerToDatabase(this.currentPlayer.idPlayer, 6)
                 this.showSuccessModal = true
             } else {
                 this.lastAttempts.push(this.guess);
@@ -339,12 +350,13 @@ export default {
                 this.showSuccessModal = true
                 this.addPlayerToBestPlayers();
                 this.calculateRanking();
-                this.addPlayerToDatabase(this.currentPlayer.id, 6)
+                console.log(this.currentPlayer)
+                this.addPlayerToDatabase(this.currentPlayer.idPlayer, this.users[this.currentIndexUsersArray].id)
             } else {
                 this.lastAttempts.push(this.guess);
                 if(this.clues.length == 8) {
                     this.showSuccessModal = true
-                    this.addPlayerToDatabase(this.currentPlayer.id, 6)
+                    this.addPlayerToDatabase(this.currentPlayer.idPlayer, 6)
                 } else {
                     this.guess = "";
                     this.currentIndexUsersArray = this.currentIndexUsersArray + 1 == this.users.length ? 0 : this.currentIndexUsersArray + 1;
@@ -478,14 +490,12 @@ export default {
         },
         async loadCompositions() {
             try {
-                const response = await fetch(`http://localhost/loadFbSession.php`, {
+                const response = await fetch(`http://localhost:3000/api/loadFootballSession/1`, {
                     method: "GET",
                 });
                 const data = await response.json();
 
                 data.forEach((element) => {
-                    element.grade = parseInt(element.grade);
-                    element.owner = parseInt(element.owner);
                     this.distributionNewPlayer(element, this.users[element.owner - 1]);
                     this.currentPlayer = element;
                     this.users[element.owner - 1].nbrFbPlayers += 1;
@@ -500,7 +510,7 @@ export default {
         },
         async getUsers() {
             try {
-                const response = await fetch(`http://localhost/getUsers.php?idGameSession=1`, {
+                const response = await fetch(`http://localhost:3000/api/getCurrentUsers/1`, {
                     method: "GET",
                 });
                 const data = await response.json();
