@@ -53,7 +53,6 @@ export default {
             }       
         },
         addPlayerToDatabase: function(idPlayer, idUser) {
-            console.log('on rentre bien ici')
             var xhr = new XMLHttpRequest();
             xhr.open("POST", "http://localhost:3000/api/updateFootballPlayerSession", true);
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -61,7 +60,6 @@ export default {
                 idPlayer: idPlayer,
                 idUser: idUser
             };
-            console.log(data)
             xhr.send(JSON.stringify(data));
   
         },
@@ -272,7 +270,6 @@ export default {
                     this.oldComposition = JSON.parse(JSON.stringify(compo))
                 }
                 this.addNewPlayerToTeam(this.playerToRemove, compo);
-                console.log(this.playerToRemove)
                 if(!playerHasBeenPlaced) {
                     if(!this.playerToRemove || this.playerToRemove?.idPlayer !== newPlayer.idPlayer) {
                         playerHasBeenPlaced = true
@@ -350,7 +347,6 @@ export default {
                 this.showSuccessModal = true
                 this.addPlayerToBestPlayers();
                 this.calculateRanking();
-                console.log(this.currentPlayer)
                 this.addPlayerToDatabase(this.currentPlayer.idPlayer, this.users[this.currentIndexUsersArray].id)
             } else {
                 this.lastAttempts.push(this.guess);
