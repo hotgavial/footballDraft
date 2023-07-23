@@ -39,7 +39,7 @@ export default {
         
     },
     methods: {
-        addPlayerToBestPlayers: function() {
+        addPlayerToBestPlayers() {
             if (this.bestPlayers.length >= 30) {
                 if (this.currentPlayer.grade <= this.bestPlayers[this.bestPlayers.length - 1].grade) {
                 return;
@@ -52,7 +52,7 @@ export default {
                 this.bestPlayers.pop();
             }       
         },
-        addPlayerToDatabase: function(idPlayer, idUser) {
+        addPlayerToDatabase(idPlayer, idUser) {
             var xhr = new XMLHttpRequest();
             xhr.open("POST", "http://localhost:3000/api/updateFootballPlayerSession", true);
             xhr.setRequestHeader("Content-Type", "application/json");
@@ -63,7 +63,7 @@ export default {
             xhr.send(JSON.stringify(data));
   
         },
-        addNewPlayerToTeam : function(newPlayer, composition) {
+        addNewPlayerToTeam(newPlayer, composition) {
             if(composition.grades.length === 11) {
                 // If in a complete team the worst graded player has a better grade than the new player, the team can't possibly improve by replacing any old player by the new player
                 if(composition.grades[0] >= newPlayer.grade) {
@@ -165,7 +165,7 @@ export default {
             composition.grades.sort((a,b)=>a-b);
             return;
         },
-        calculateRanking: function() {
+        calculateRanking() {
             this.calculalteUsersScore();
             
 
@@ -179,7 +179,7 @@ export default {
                 user.ranking = ranking;
             }
         },
-        calculalteUsersScore: function() {
+        calculalteUsersScore() {
             let rankingAllCompositions = [];
 
             for(let user of this.users) {
@@ -221,24 +221,24 @@ export default {
             }
             this.rankingAllCompositions = rankingAllCompositions.sort((a, b) => b.total - a.total);
         },
-        convertIntoArray: function() {
+        convertIntoArray() {
             this.currentPlayerClues = [];
-            this.currentPlayerClues.push("Nom " + this.currentPlayer.name.charAt(0));
-            this.currentPlayerClues.push("Prénom " + this.currentPlayer.firstName?.charAt(0));
+            this.currentPlayerClues.push(`Nom : ${this.currentPlayer.name.charAt(0)}`);
+            this.currentPlayerClues.push(`Prénom : ${this.currentPlayer.firstName?.charAt(0)}`);
             const positionsText = this.currentPlayer.positions.map((item) => item.position).join(", ");
             this.currentPlayer.positions = this.currentPlayer.positions.map((item) => item.position)
-            this.currentPlayerClues.push("Positions : " + positionsText)
-            this.currentPlayerClues.push(this.currentPlayer.size + " cm");
-            this.currentPlayerClues.push("Année de Naissance : " + this.currentPlayer.birthDate);
-            this.currentPlayerClues.push("Buts en Sélection : " + this.currentPlayer.goalsScoredForCountry);
-            this.currentPlayerClues.push("Match en Sélection : " + this.currentPlayer.gamesPlayedForCountry);
-            this.currentPlayerClues.push(this.currentPlayer.nationality);
+            this.currentPlayerClues.push(`Positions : ${positionsText}`)
+            this.currentPlayerClues.push(`${this.currentPlayer.size} cm`);
+            this.currentPlayerClues.push(`Année de Naissance : ${this.currentPlayer.birthDate}`);
+            this.currentPlayerClues.push(`Buts en Sélection : ${this.currentPlayer.goalsScoredForCountry}`);
+            this.currentPlayerClues.push(`Match en Sélection : ${this.currentPlayer.gamesPlayedForCountry}`);
+            this.currentPlayerClues.push(`Pays : ${this.currentPlayer.nationality}`);
             this.currentPlayer.years.forEach((year) => {
                 const lastYear = year.lastYear ? year.lastYear : '????'
                 this.currentPlayerClues.push(`${year.firstYear}/${lastYear} : ${year.club.club} (${year.club.country})`);
             });
         },
-        distributionNewPlayer: function(newPlayer, uniqueUser) {
+        distributionNewPlayer(newPlayer, uniqueUser) {
                     
             if(uniqueUser.listCompoUser[0] === undefined) {
                 let compo = {
@@ -541,8 +541,8 @@ export default {
         <div class="host-game">
             <SuccessScreen v-if="showSuccessModal" @success-animation-over="newRound" :old-compo="oldComposition" :new-compo="newComposition" :new-player="currentPlayer" :old-player="playerRemoved"/>
             <div class="host-game_orderedTeams">
-                <RankingComposition :rankingAllCompositions="rankingAllCompositions" />
-                <BestPlayers :bestPlayers="bestPlayers" />
+                <RankingComposition :ranking-all-compositions="rankingAllCompositions" />
+                <BestPlayers :best-players="bestPlayers" />
             </div>
             <div class="host-game_central-div">
                 <div class="host-game_central-div_upper-part">
