@@ -1,5 +1,3 @@
-const sequelize = require('../db/sequelize');
-const { Op } = require('sequelize');
 const { User, UserSession } = require('../models/associations')
 
 module.exports = (app) => {

@@ -1,4 +1,3 @@
-const sequelize = require('../db/sequelize');
 const { Op } = require('sequelize');
 const { FootballPlayer, Position, FootballPlayerSession } = require('../models/associations')
 
