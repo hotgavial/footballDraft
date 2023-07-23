@@ -1,7 +1,5 @@
 const express = require('express')
-const mysql = require('mysql2')
 const bodyParser = require('body-parser')
-const sequelize = require('./src/db/sequelize')
 const cors = require('cors');
 
 const app = express()
