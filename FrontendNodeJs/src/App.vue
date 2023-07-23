@@ -539,7 +539,7 @@ export default {
 <template>
       <div v-if="users.length !== 0" class="whole">
         <div class="host-game">
-            <SuccessScreen v-if="showSuccessModal" @success-animation-over="newRound" :oldCompo="oldComposition" :newCompo="newComposition" :newPlayer="currentPlayer" :oldPlayer="playerRemoved"/>
+            <SuccessScreen v-if="showSuccessModal" @success-animation-over="newRound" :old-compo="oldComposition" :new-compo="newComposition" :new-player="currentPlayer" :old-player="playerRemoved"/>
             <div class="host-game_orderedTeams">
                 <RankingComposition :rankingAllCompositions="rankingAllCompositions" />
                 <BestPlayers :bestPlayers="bestPlayers" />
@@ -573,7 +573,7 @@ export default {
                         </ul>
                     </div>
                 </div>
-                <CompositionScreen v-if="compositionToDisplay" :compositionToDisplay="compositionToDisplay" />
+                <CompositionScreen v-if="compositionToDisplay" :composition-to-display="compositionToDisplay" />
                 <select class="listUserForCompoScreenChange" name="" id="" v-model="selectedUserIndexForCompoScreen">
                     <option v-for="(user, index) in users" :value="index" :key="index">{{ user.pseudo }}</option>
                 </select>
@@ -582,7 +582,7 @@ export default {
                 </select>
                 <button v-if="!hasGameStarted" @click="startGame">Ajouter joueur</button>
             </div>
-            <UsersScoreSheets :users="users" :currentUser="currentUser"/>
+            <UsersScoreSheets :users="users" :current-user="currentUser"/>
         </div>
     </div>
 </template>
