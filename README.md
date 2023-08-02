@@ -9,6 +9,8 @@ But if a player gets the right lastname (there is a tolerance with uppercases an
 An algorithm determinates in what composition the player will be placed in order for the first composition to be the best possible team and so on.
 The general rankings depends on the best compositions from different players.
 
+![exemple](https://github.com/hotgavial/footballDraft/assets/71531000/2ae94b64-dadd-40df-a857-3cd5380887f2)
+
 Data are stocked in Mysql database within different tables :
 - Career, Club, Position and FootballPlayer are the tables from which footballplayer objects and clues to find them are drawned.
 - User, UserSession, GameSession, FootballPlayerSession are the tables containing the data for the on going game. It allows player to continue the party later on.
