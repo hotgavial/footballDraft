@@ -4,8 +4,8 @@ Front is in Vue JS
 Back is in NodeJS
 
 Purpose :
-Four players compete to get the best possible teams. Everyone gets a random club about a football player. If noone guesses the footballer then no one can have it on his team.
-But if a player gets the right lastname (there is a tolerance with uppercases and accents) the player joins automatically his team and is placed in one of his composition.
+Four players compete to get the best possible teams. Everyone gets a random clue about a football player. If noone guesses the football player then no one can get it on his team.
+But if a player gets the right lastname (there is a tolerance with uppercases and accents) the player joins automatically his team and is placed in one of his compositions.
 An algorithm determinates in what composition the player will be placed in order for the first composition to be the best possible team and so on.
 The general rankings depends on the best compositions from different players.
 
