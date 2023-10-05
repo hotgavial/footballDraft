@@ -12,7 +12,7 @@ The general rankings depends on the best compositions from different players.
 ![exemple](https://github.com/hotgavial/footballDraft/assets/71531000/2ae94b64-dadd-40df-a857-3cd5380887f2)
 
 Data are stocked in Mysql database within different tables :
-- Career, Club, Position and FootballPlayer are the tables from which footballplayer objects and clues to find them are drawned.
+- Career, Club, Position and FootballPlayer are the tables from which footballplayer objects and clues to find them are drawn.
 - User, UserSession, GameSession, FootballPlayerSession are the tables containing the data for the on going game. It allows player to continue the party later on.
 
 !!! This is just a personal project hosted on my personal computer, without proper database and the right data inside it you won't be able to run the project. !!!
